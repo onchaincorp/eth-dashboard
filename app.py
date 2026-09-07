@@ -1,6 +1,20 @@
 import streamlit as st
+import pandas as pd
+from io import BytesIO
 import sys
 from database import cargar_ultimo, cargar_historial
+
+from datetime import datetime, timedelta
+from etl import correr_etl
+
+def datos_estan_viejos(fecha_texto, minutos=60):
+	fecha_dato = datetime.fromisoformat(fecha_texto)
+	return datetime.now() - fecha_dato > timedelta(minutes=minutos)
+
+ultimo_precio = cargar_ultimo("precios_eth")
+if ultimo_precio is None or datos_estan_viejos(ultimo_precio["fecha"]):
+	with st.spinner("Actualizando datos desde las APIS..."):
+		correr_etl()
 
 # ---configuracion de la pagina ---
 
@@ -119,7 +133,7 @@ st.divider()
 
 st.subheader("Tendencias históricas")
 
-tab1, tab2, tab3, tab4 = st.tabs(["💰 Precio", "⛽ Gas", "🏦 DeFi", "🔒 Staking"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["💰 Precio", "⛽ Gas", "🏦 DeFi", "🔒 Staking", "📡 Red"])
 
 with tab1:
 	historial_precio = cargar_historial("precios_eth")
@@ -154,8 +168,49 @@ with tab4:
 	else:
   		st.info("Corre el ETL varias veces para ver tendencia aquí.")
 
+with tab5:
+	historial_red = cargar_historial("network_activity")
+	if len(historial_red) >=2:
+		col_tx, col_addr = st.columns(2)
+		with col_tx:
+			st.caption("Transacciones diarias")
+			st.line_chart(historial_red.set_index("fecha")["tx_count"])
+		with col_addr:
+			st.caption("Direcciones activas")
+			st.line_chart(historial_red.set_index("fecha")["active_addresses"])
+	else:
+		st.info("Corre el ETL varias veces para ver tendencia aquí.")
+
 with st.expander("Ver datos crudos (precio)"):
 	st.dataframe(historial_precio, use_container_width=True)
+
+st.divider()
+
+def generar_reporte_excel():
+	buffer = BytesIO()
+
+	hist_precio = cargar_historial("precios_eth", limite=100000)
+	hist_gas = cargar_historial("gas_fees", limite=100000)
+	hist_defi = cargar_historial("defillama_metrics", limite=100000)
+	hist_staking = cargar_historial("staking_metrics", limite=100000)
+	hist_red = cargar_historial("network_activity", limite=100000)
+
+	with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+		hist_precio.to_excel(writer, sheet_name="Precio y Market Cap", index=False)
+		hist_gas.to_excel(writer, sheet_name="Gas Fees", index=False)
+		hist_defi.to_excel(writer, sheet_name="TVL y Stablecoins", index=False)
+		hist_staking.to_excel(writer, sheet_name="Staking", index=False)
+		hist_red.to_excel(writer, sheet_name="Actividad de Red", index=False)
+	
+	buffer.seek(0)
+	return buffer
+
+st.download_button(
+	label="📊 Descargar datos completos (Excel)",
+	data=generar_reporte_excel(),
+	file_name="eth_dashboard_datos.xlsx",
+	mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+)
 
 st.caption("Fuentes: CoinGecko · Etherscan · DefiLlama · growthepie · Contrato de depósito de staking (on-chain)")
 
