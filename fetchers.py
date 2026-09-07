@@ -1,7 +1,7 @@
 import requests
 
 import os
-import streamlit as ts
+import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv()
