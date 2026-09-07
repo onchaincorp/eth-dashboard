@@ -1,10 +1,15 @@
 import requests
 
 import os
+import streamlit as ts
 from dotenv import load_dotenv
 
 load_dotenv()
-ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY")
+
+try:
+	ETHERSCAN_API_KEY = st.secrets["ETHERSCAN_API_KEY"]
+except (KeyError, FileNotFoundError):
+	ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY")
 
 def obtener_gas_fees():
 	url = "https://api.etherscan.io/v2/api"
@@ -113,3 +118,8 @@ def obtener_active_addresses():
 if __name__ == "__main__":
 	print("Active addresses:", obtener_active_addresses())
 
+# NOTA: "Transaction volume (USD)" quedó fuera del dashboard.
+# No existe una API gratuita directa para este dato a nivel Ethereum L1.
+# La alternativa viable es Dune Analytics (requiere cuenta + escribir una
+# consulta SQL personalizada en su plataforma) — pendiente para una futura
+# iteración del proyecto.
