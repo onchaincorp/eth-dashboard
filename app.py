@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 import sys
-from database import cargar_ultimo, cargar_historial
+from database import cargar_ultimo, cargar_historial, crear_tabla
 
 from datetime import datetime, timedelta
 from etl import correr_etl
@@ -10,6 +10,8 @@ from etl import correr_etl
 def datos_estan_viejos(fecha_texto, minutos=60):
 	fecha_dato = datetime.fromisoformat(fecha_texto)
 	return datetime.now() - fecha_dato > timedelta(minutes=minutos)
+
+crear_tabla()
 
 ultimo_precio = cargar_ultimo("precios_eth")
 if ultimo_precio is None or datos_estan_viejos(ultimo_precio["fecha"]):
