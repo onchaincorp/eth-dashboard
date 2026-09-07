@@ -34,12 +34,15 @@ def correr_etl():
 
 #
 
+try:
 	stake = obtener_eth_staking()
 	fecha_actual = datetime.now().isoformat()
 
 	guardar_staking(stake, fecha_actual)
 
 	print(f"Guardado: {stake} ETH staked a las {fecha_actual}")
+except Exception as e:
+	print(f"No se pudo guardar ETH stakinh: {e}")
 
 #
 

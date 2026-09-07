@@ -85,6 +85,8 @@ def obtener_eth_staking():
 	respuesta = requests.get(url, params=params)
 	datos = respuesta.json()
 
+	print("Respuesta cruda de staking:", datos)
+
 	balance_wei = int(datos["result"])
 	eth_staked = balance_wei / 1e18       # convertir de wei a ETH
 		
