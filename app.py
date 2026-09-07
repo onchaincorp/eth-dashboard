@@ -72,7 +72,7 @@ defillama = cargar_ultimo("defillama_metrics")
 staking = cargar_ultimo("staking_metrics")
 network = cargar_ultimo("network_activity")
 
-If network is None:
+if network is None:
 	network = {"tx_count": 0, "active_addresses": 0}
 
 if precio is None:
