@@ -43,6 +43,7 @@ def correr_etl():
 
 #
 
+try:
 	tx = obtener_tx_count()
 	addresses = obtener_active_addresses()
 	fecha_actual = datetime.now().isoformat()
@@ -50,6 +51,8 @@ def correr_etl():
 	guardar_network_activity(tx, addresses, fecha_actual)
 
 	print(f"Guardado: {tx} tx / {addresses} active addresses a las {fecha_actual}")
+except Exception as e:
+	print(f"No se pudo guardar actividad de red: {e}")
 if __name__ == "__main__":
 	correr_etl()
 
