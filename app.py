@@ -210,6 +210,21 @@ def generar_reporte_excel():
 	buffer.seek(0)
 	return buffer
 
+st.divider()
+st.subheader("📌 Bitácora de eventos del mercado")
+
+from database import cargar_eventos
+eventos = cargar_eventos()
+
+if eventos.empty:
+	st.info("Todavía no hay eventos registrados. Se irán agregando conforme el ETL detecte noticias relevantes de Ethereum.")
+else:
+	for _, evento in eventos.iterrows():
+		with st.expander(f"📰 {evento['titulo']}"):
+			st.caption(f"Fuente: {evento['fuente']} · {evento['fecha_noticia']}")
+			st.write(evento['analisis_ia'])
+			st.markdown(f"[Leer noticia completa]({evento['url']})")
+
 st.download_button(
 	label="📊 Descargar datos completos (Excel)",
 	data=generar_reporte_excel(),

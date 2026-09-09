@@ -3,6 +3,7 @@ import requests
 import os
 import streamlit as st
 from dotenv import load_dotenv
+import anthropic
 
 load_dotenv()
 
@@ -10,6 +11,18 @@ try:
 	ETHERSCAN_API_KEY = st.secrets["ETHERSCAN_API_KEY"]
 except (KeyError, FileNotFoundError):
 	ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY")
+
+try: 
+	CRYPTOPANIC_API_KEY = st.secrets["CRYPTOPANIC_API_KEY"]
+except (KeyError, FileNotFoundError):
+	CRYPTOPANIC_API_KEY = os.getenv("CRYPTOPANIC_API_KEY")
+
+try:
+	ANTHROPIC_API_KEY = st.secrets["ANTHROPIC_API_KEY"]
+except (KeyError, FileNotFoundError):
+	ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+
+cliente_claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 def obtener_gas_fees():
 	url = "https://api.etherscan.io/v2/api"
@@ -119,6 +132,51 @@ def obtener_active_addresses():
 
 if __name__ == "__main__":
 	print("Active addresses:", obtener_active_addresses())
+
+def obtener_noticias_eth():
+	url = "https://cryptocurrency.cv/api/news"
+	params = {
+		"limit": 20,
+		"category": "ethereum"
+	}
+	respuesta = requests.get(url, params=params)
+	
+	datos = respuesta.json()
+	noticias = datos.get("articles", [])
+	return noticias 
+
+if __name__ == "__main__":
+	noticias = obtener_noticias_eth()
+	print(f"Se encontraron {len(noticias)} noticias")
+
+def generar_analisis_evento(titulo, descripcion, precio_actual, cambio_24h, gas_actual):
+	prompt = f"""Eres un analista financiero especializado en Ethereum, escribiendo para el canal "Revolución Financiera".
+
+Noticia: {titulo}
+Resumen: {descripcion}
+
+Contexto actual del mercado:
+- Precio ETH: ${precio_actual:,.2f} ({cambio_24h:+.2f}% en 24h)
+- Gas fee: {gas_actual:.3f} Gwei
+
+Escribe un análisis breve (máximo 3 oraciones) en español, explicando por qué esta noticia es relevante para alguien que sigue el mercado de Ethereum, conectándola con el contexto actual si aplica. Tono profesional pero accesible."""
+
+	respuesta = cliente_claude.messages.create(
+		model="claude-haiku-4-5-20251001",
+		max_tokens=300,
+		messages=[{"role": "user", "content": prompt}]
+	)
+	
+	return respuesta.content[0].text
+if __name__ == "__main__":
+	analisis = generar_analisis_evento(
+		titulo="Ethereum staking supera niveles récord",
+		descripcion="El total de ETH en staking alcanzó nuevos máximos históricos.",
+		precio_actual=2500.00,
+		cambio_24h=3.5,
+		gas_actual=0.05
+	)
+	print(analisis)
 
 # NOTA: "Transaction volume (USD)" quedó fuera del dashboard.
 # No existe una API gratuita directa para este dato a nivel Ethereum L1.
